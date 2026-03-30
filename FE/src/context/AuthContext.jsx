@@ -1,0 +1,49 @@
+import React, { createContext, useState, useEffect } from 'react';
+import authService from '../services/authService';
+
+export const AuthContext = createContext(null);
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Check auth state on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const userData = await authService.getCurrentUser();
+        setUser(userData);
+      } catch (error) {
+        // Not authenticated or error
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  const login = async (email, password) => {
+    const userData = await authService.login(email, password);
+    setUser(userData);
+    return userData;
+  };
+
+  const register = async (userData) => {
+    const response = await authService.register(userData);
+    setUser(response);
+    return response;
+  };
+
+  const logout = async () => {
+    await authService.logout();
+    setUser(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
+};
